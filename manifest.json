@@ -1,0 +1,10 @@
+{
+  "version": 0,
+  "tools": {
+    "gpstak": {
+      "label": "GPSTAK Network GPS",
+      "path": "index.html"
+    }
+  },
+  "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-inline'"
+}

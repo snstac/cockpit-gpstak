@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- GPSTAK Cockpit plugin. SPDX-License-Identifier: Apache-2.0
+     Copyright Sensors & Signals LLC https://www.snstac.com/ -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GPSTAK Network GPS</title>
+  <link rel="stylesheet" href="gpstak.css">
+  <script src="../base1/cockpit.js"></script>
+</head>
+<body>
+  <main class="aos-main">
+    <h1>GPSTAK — Network GPS for TAK</h1>
+    <p class="aos-sub">Feed this device's GNSS position to <strong>ATAK</strong>
+      (Settings &rarr; Device Preferences &rarr; GPS Preferences &rarr;
+      <em>External or Network GPS</em>) and <strong>WinTAK</strong>. CoT position events
+      go to the COT_URL; WinTAK can take raw NMEA.</p>
+
+    <section class="aos-card">
+      <h2>Service <span id="svc-state" class="aos-status"></span></h2>
+      <div class="aos-actions">
+        <button class="aos-btn aos-primary" id="btn-enable">Enable &amp; start</button>
+        <button class="aos-btn" id="btn-restart">Restart</button>
+        <button class="aos-btn" id="btn-disable">Stop &amp; disable</button>
+      </div>
+      <div id="last-fix" class="aos-hint"></div>
+    </section>
+
+    <section class="aos-card">
+      <h2>Configuration</h2>
+      <label>CoT destination (COT_URL)
+        <input type="text" id="cot-url" placeholder="udp+broadcast://255.255.255.255:4349">
+      </label>
+      <p class="aos-hint">Broadcast reaches every ATAK device on the subnet; use
+        <code>udp+wo://&lt;tablet-ip&gt;:4349</code> for a single device.</p>
+      <label>NMEA passthrough targets (WinTAK, space-separated host:port — empty = off)
+        <input type="text" id="nmea-targets" placeholder="192.168.1.60:4349">
+      </label>
+      <label>Update rate (seconds)
+        <input type="text" id="rate" placeholder="1.0">
+      </label>
+      <div class="aos-actions">
+        <button class="aos-btn aos-primary" id="btn-save">Save &amp; restart</button>
+        <span id="save-status" class="aos-status"></span>
+      </div>
+    </section>
+
+    <details class="aos-card">
+      <summary>Journal (last 40 lines)</summary>
+      <pre id="journal" style="white-space:pre-wrap"></pre>
+    </details>
+  </main>
+  <script src="gpstak.js"></script>
+</body>
+</html>
