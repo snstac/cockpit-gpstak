@@ -28,6 +28,23 @@ function setKey(text, key, value) {
     return re.test(text) ? text.replace(re, line) : text.replace(/\n*$/, "\n") + line + "\n";
 }
 
+function normalizeDegrees(value) {
+    return ((value % 360) + 360) % 360;
+}
+
+function formatBearing(value) {
+    if (value === undefined || value === null || Number.isNaN(value)) return "";
+    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    const bearing = normalizeDegrees(value);
+    return bearing.toFixed(0) + "° " + dirs[Math.round(bearing / 45) % 8];
+}
+
+function magneticCourse(tpv) {
+    if (tpv && tpv.magtrack !== undefined) return normalizeDegrees(tpv.magtrack);
+    if (!tpv || tpv.track === undefined || tpv.magvar === undefined) return undefined;
+    return normalizeDegrees(tpv.track + tpv.magvar);
+}
+
 function refreshState() {
     cockpit.spawn(["systemctl", "is-active", UNIT], { err: "ignore" })
         .then((o) => { $("svc-state").textContent = o.trim(); $("svc-state").className = "aos-status ok"; })
@@ -35,18 +52,32 @@ function refreshState() {
     cockpit.spawn(["journalctl", "-u", UNIT, "-n", "40", "--no-pager"], { superuser: "try", err: "ignore" })
         .then((o) => { $("journal").textContent = o; })
         .catch(() => { $("journal").textContent = "(no journal access)"; });
-    cockpit.spawn(["gpspipe", "-w", "-n", "8"], { err: "ignore" })
+    cockpit.spawn(["gpspipe", "-w", "-n", "16"], { err: "ignore" })
         .then((o) => {
+            let fix = null;
+            let attitude = null;
             for (const line of o.split("\n")) {
                 try {
                     const m = JSON.parse(line);
                     if (m.class === "TPV" && m.mode >= 2) {
-                        $("last-fix").textContent =
-                            "Current fix: " + m.lat.toFixed(6) + ", " + m.lon.toFixed(6) +
-                            (m.altHAE !== undefined ? "  HAE " + m.altHAE.toFixed(1) + " m" : "");
-                        return;
+                        fix = m;
+                    } else if (m.class === "ATT" || m.class === "IMU") {
+                        attitude = m;
                     }
                 } catch (e) { /* not json */ }
+            }
+            if (fix) {
+                let summary = "Current fix: " + fix.lat.toFixed(6) + ", " + fix.lon.toFixed(6) +
+                    (fix.altHAE !== undefined ? "  HAE " + fix.altHAE.toFixed(1) + " m" : "");
+                if (attitude && attitude.mheading !== undefined) {
+                    summary += "  Magnetic heading " + formatBearing(attitude.mheading);
+                    if (attitude.mag_st) summary += " (" + attitude.mag_st + ")";
+                } else {
+                    const derived = magneticCourse(fix);
+                    if (derived !== undefined) summary += "  Magnetic heading " + formatBearing(derived) + " (derived from course)";
+                }
+                $("last-fix").textContent = summary;
+                return;
             }
             $("last-fix").textContent = "No GNSS fix yet (check the GPS page).";
         })
